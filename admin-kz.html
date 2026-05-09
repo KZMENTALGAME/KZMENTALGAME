@@ -35,7 +35,7 @@
         <div class="card">
             <h3>📊 Statistiques Globales</h3>
             <p>Total membres : <span id="totalUsers" style="font-size: 20px; font-weight: bold;">0</span></p>
-            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste Supabase</button>
+            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste</button>
         </div>
 
         <div id="userList">Chargement des données...</div>
@@ -59,12 +59,11 @@
 
         async function loadDashboard() {
             const { data: users, error } = await _supabase
-                .from('profils_promo') // Table correcte
-                .select('*')
-                .order('created_at', { ascending: false });
+                .from('profils_promo')
+                .select('*');
 
             if (error) {
-                alert("Erreur Supabase : " + error.message);
+                alert("Erreur de connexion : " + error.message);
                 return;
             }
             
@@ -77,6 +76,8 @@
             container.innerHTML = "";
             
             users.forEach((user) => {
+                // Utilisation de l'email comme identifiant unique
+                const id = user.email; 
                 container.innerHTML += `
                     <div class="user-row">
                         <strong>👤 ${user.username || 'Anonyme'}</strong> (${user.phone || 'Pas de numéro'})
@@ -86,72 +87,64 @@
                             <span>⭐ Inscrits: <b>${user.nombre_filleuls || 0}/15</b></span>
                         </div>
                         
-                        <div class="stats-box" style="background:#1a2a3a; margin-bottom:10px;">
-                            <span>👥 Filleuls: <b>${user.nombre_filleuls || 0}</b></span>
-                            <span>🎁 Bonus Parrain: <b>${user.bonus_parrainage || 0} F</b></span>
-                        </div>
-                        
-                        <input type="number" id="amt-${user.id}" class="input-mini" placeholder="Montant à modifier">
+                        <input type="number" id="amt-${user.username}" class="input-mini" placeholder="Montant">
                         
                         <div class="btn-group">
-                            <button class="btn-green" onclick="updateField('${user.id}', 'solde', ${user.solde}, 'add')">DÉPÔT</button>
-                            <button class="btn-red" onclick="updateField('${user.id}', 'solde', ${user.solde}, 'sub')">RETRAIT</button>
-                            <button class="btn-blue" onclick="updateField('${user.id}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 INSCRI</button>
-                            <button class="btn-green" style="background:#2e7d32" onclick="validerBonus15('${user.id}', ${user.nombre_filleuls || 0}, ${user.solde})">PAYER 1200</button>
+                            <button class="btn-green" onclick="updateField('${user.email}', 'solde', ${user.solde}, 'add', '${user.username}')">DÉPÔT</button>
+                            <button class="btn-red" onclick="updateField('${user.email}', 'solde', ${user.solde}, 'sub', '${user.username}')">RETRAIT</button>
+                            <button class="btn-blue" onclick="updateField('${user.email}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 INSCRI</button>
+                            <button class="btn-green" style="background:#2e7d32" onclick="validerBonus15('${user.email}', ${user.nombre_filleuls || 0}, ${user.solde})">PAYER 1200</button>
                         </div>
-
-                        <div class="btn-group">
-                            <button class="btn-blue" style="background:#5c6bc0" onclick="updateField('${user.id}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 FILLEUL</button>
-                            <button class="btn-red" style="background:#444;" onclick="deleteUser('${user.id}')">SUPPRIMER</button>
-                        </div>
+                        <button class="btn-red" style="background:#444; margin-top:10px;" onclick="deleteUser('${user.email}')">SUPPRIMER</button>
                     </div>`;
             });
         }
 
-        async function updateField(userId, field, currentVal, action) {
+        async function updateField(email, field, currentVal, action, username) {
             let newVal;
-            const inputAmt = parseInt(document.getElementById(`amt-${userId}`).value);
+            const inputElement = document.getElementById(`amt-${username}`);
+            const inputAmt = inputElement ? parseInt(inputElement.value) : 0;
 
             if (action === 'add') {
-                if(!inputAmt) return alert("Montant ?");
-                newVal = currentVal + inputAmt;
+                if(!inputAmt) return alert("Entrez un montant !");
+                newVal = (currentVal || 0) + inputAmt;
             } else if (action === 'sub') {
-                if(!inputAmt) return alert("Montant ?");
-                newVal = (currentVal - inputAmt) < 0 ? 0 : currentVal - inputAmt;
+                if(!inputAmt) return alert("Entrez un montant !");
+                newVal = (currentVal || 0) - inputAmt;
             } else if (action === 'add_one') {
                 newVal = (currentVal || 0) + 1;
             }
 
             const { error } = await _supabase
-                .from('profils_promo') // Toujours utiliser profils_promo
+                .from('profils_promo')
                 .update({ [field]: newVal })
-                .eq('id', userId);
+                .eq('email', email);
 
             if(!error) {
-                document.getElementById(`amt-${userId}`).value = "";
+                if(inputElement) inputElement.value = "";
                 loadDashboard();
             }
         }
 
-        async function validerBonus15(userId, nombre_filleuls, solde) {
+        async function validerBonus15(email, nombre_filleuls, solde) {
             if(nombre_filleuls >= 15) {
                 const { error } = await _supabase
-                    .from('profils_promo') // Toujours utiliser profils_promo
-                    .update({ solde: solde + 1200, nombre_filleuls: 0, bonus_parrainage: 1200 })
-                    .eq('id', userId);
+                    .from('profils_promo')
+                    .update({ solde: solde + 1200, nombre_filleuls: 0 })
+                    .eq('email', email);
 
                 if(!error) {
                     alert("Succès : 1200 F ajoutés !");
                     loadDashboard();
                 }
             } else {
-                alert("Il faut 15 inscriptions !");
+                alert("Il faut au moins 15 inscriptions !");
             }
         }
 
-        async function deleteUser(userId) {
-            if(confirm("Supprimer définitivement ce membre ?")) {
-                await _supabase.from('profils_promo').delete().eq('id', userId);
+        async function deleteUser(email) {
+            if(confirm("Supprimer ce membre ?")) {
+                await _supabase.from('profils_promo').delete().eq('email', email);
                 loadDashboard();
             }
         }
