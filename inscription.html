@@ -176,8 +176,8 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     };
 
     // --- LOGIQUE D'INSCRIPTION ---
-    function register() {
-            const user = document.getElementById('reg-username').value;
+    async function register() {
+    const user = document.getElementById('reg-username').value;
     const email = document.getElementById('reg-email').value;
     const phone = iti.getNumber();
     const parrain = document.getElementById('reg-parrain').value;
@@ -187,78 +187,57 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
         return;
     }
 
-    // A. Envoi invisible vers Formspree (ton Gmail)
-    fetch("https://formspree.io/f/xpqkrzrb", {
-        method: "POST",
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({
-            nom: user,
-            email: email,
-            telephone: phone,
-            parrain: parrain,
-            date_inscription: new Date().toLocaleString()
-        })
-    }).catch(() => {});
-    // --- NOUVELLE FONCTION DE LIAISON DIRECTION (REMPLACE SUPABASE) ---
-function envoyerVersAdmin() {
     try {
-        // On récupère la liste actuelle ou on crée une liste vide
-        let baseDonnees = JSON.parse(localStorage.getItem('BaseUtilisateurs')) || [];
-        
-        // On crée l'objet avec les données de l'inscription
-        const nouvelInscrit = {
-            username: user, // utilise vos variables existantes
-            phone: phone,
-            email: email,
-            solde: 0,
-            bonus: 0,
-            compteur: 0, // Initialisé à 0 pour le suivi des 15 parrains
-            date: new Date().toLocaleString()
-        };
-        
-        // On ajoute à la base et on enregistre
-        baseDonnees.push(nouvelInscrit);
-        localStorage.setItem('BaseUtilisateurs', JSON.stringify(baseDonnees));
-        
-        console.log("Utilisateur envoyé à la Direction !");
+        // --- A. ENVOI VERS TON ADMIN (SUPABASE) ---
+        const { error: supError } = await _supabase
+            .from('profils_promo')
+            .insert([{ 
+                username: user, 
+                phone: phone, 
+                email: email,
+                solde: 0, 
+                nombre_filleuls: 0,
+                bonus_parrainage: 0,
+                code_promo: user 
+            }]);
+
+        if (supError) console.log("Erreur Admin:", supError);
+
+        // --- B. COMPTEUR DU PARRAIN ---
+        if (parrain) {
+            const { data: pData } = await _supabase
+                .from('profils_promo')
+                .select('nombre_filleuls')
+                .eq('username', parrain)
+                .single();
+
+            if (pData) {
+                await _supabase
+                    .from('profils_promo')
+                    .update({ nombre_filleuls: (pData.nombre_filleuls || 0) + 1 })
+                    .eq('username', parrain);
+            }
+        }
+
+        // --- C. ENVOI FORMSPREE (GMAIL) ---
+        fetch("https://formspree.io/f/xpqkrzrb", {
+            method: "POST",
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nom: user, tel: phone, parrain: parrain })
+        }).catch(() => {});
+
+        // --- D. ENREGISTREMENT PERMANENT (LOCALSTORAGE) ---
+        const accountData = { username: user, email: email, phone: phone, parrain: parrain };
+        localStorage.setItem(email, JSON.stringify(accountData)); 
+        localStorage.setItem('user_connected', email);
+
+        alert("Votre compte a été créé avec succès !");
+        window.location.href = "index.html"; 
+
     } catch (e) {
-        console.log("Erreur de liaison Direction :", e);
+        alert("Erreur lors de l'enregistrement.");
     }
 }
-
-
-// On lance la fonction immédiatement
-envoyerVersAdmin();
-
-
-    // B. Envoi vers Supabase (Compteur +1 pour le parrain)
-    if (parrain) {
-        fetch("https://vvnbdcjhugpdvywtraku.supabase.co/rest/v1/rpc/increment_filleuls", {
-            method: 'POST',
-            headers: {
-                'apikey': "sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv",
-                'Authorization': `Bearer sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ parrain_code: parrain })
-        }).catch(e => console.log("Erreur Supabase"));
-    }
-
-    // C. Enregistrement local pour le nouvel utilisateur
-    const accountData = {
-        username: user,
-        email: email,
-        phone: phone,
-        parrain: parrain,
-        filleuls: 0 
-    };
-    localStorage.setItem('user_connected', email);
-    localStorage.setItem('userAccount', JSON.stringify(accountData));
-
-    // D. Finalisation
-    alert("Votre compte a été créé avec succès !");
-    window.location.href = "index.html"; 
-    };
 
         
 

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DIRECTION KZ - Contrôle Direct</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #121212; color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; }
         .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
@@ -15,6 +16,7 @@
         .btn-green { background: #4CAF50; color: white; }
         .btn-blue { background: #2196F3; color: white; }
         .input-mini { background: #333; color: white; text-align: center; font-size: 16px; border: 1px solid #444; }
+        .stats-box { display: flex; justify-content: space-between; background: #333; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; }
         #adminContent { display: none; }
         h1, h2, h3 { color: #ff9800; text-align: center; }
     </style>
@@ -31,16 +33,19 @@
         <h1>DIRECTION GÉNÉRALE</h1>
         
         <div class="card">
-            <h3>📊 Statistiques Membres</h3>
-            <p>Total inscrits : <span id="totalUsers" style="font-size: 20px; font-weight: bold;">0</span></p>
-            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste</button>
+            <h3>📊 Statistiques Globales</h3>
+            <p>Total membres : <span id="totalUsers" style="font-size: 20px; font-weight: bold;">0</span></p>
+            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste Supabase</button>
         </div>
 
-        <div id="userList">Chargement des comptes...</div>
+        <div id="userList">Chargement des données...</div>
     </div>
 
     <script>
-        // Vérification du PIN
+        const supabaseUrl = 'https://vvnbdcjhugpdvywtraku.supabase.co';
+        const supabaseKey = 'sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
         function checkPin() {
             const pin = document.getElementById('pinCode').value;
             if(pin === "Apodjax1") {
@@ -48,13 +53,21 @@
                 document.getElementById('adminContent').style.display = 'block';
                 loadDashboard();
             } else {
-                alert("Bandit, tu as fumé la peau du maïs ? Accès refusé !");
+                alert("Accès refusé !");
             }
         }
 
-        // Charger la liste depuis la mémoire locale (Base de données directe)
-        function loadDashboard() {
-            const users = JSON.parse(localStorage.getItem('BaseUtilisateurs')) || [];
+        async function loadDashboard() {
+            const { data: users, error } = await _supabase
+                .from('profils_promo') // Table correcte
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                alert("Erreur Supabase : " + error.message);
+                return;
+            }
+            
             document.getElementById('totalUsers').innerText = users.length;
             renderUsers(users);
         }
@@ -63,72 +76,84 @@
             const container = document.getElementById('userList');
             container.innerHTML = "";
             
-            users.forEach((user, index) => {
+            users.forEach((user) => {
                 container.innerHTML += `
                     <div class="user-row">
-                        <strong>👤 Nom : ${user.username || user.nom || 'Anonyme'}</strong><br>
-                        📞 Tél : ${user.phone || 'Non renseigné'}<br>
-                        💰 Argent : <span style="color:#4CAF50">${user.solde || 0} FCFA</span><br>
-                        ⭐ Compteur Inscriptions : <b style="color:#ff9800">${user.compteur || 0} / 15</b>
+                        <strong>👤 ${user.username || 'Anonyme'}</strong> (${user.phone || 'Pas de numéro'})
                         
-                        <hr style="border: 0.5px solid #444; margin: 10px 0;">
+                        <div class="stats-box">
+                            <span>💰 Solde: <b>${user.solde || 0} F</b></span>
+                            <span>⭐ Inscrits: <b>${user.nombre_filleuls || 0}/15</b></span>
+                        </div>
                         
-                        <input type="number" id="amt-${index}" class="input-mini" placeholder="Montant FCFA">
+                        <div class="stats-box" style="background:#1a2a3a; margin-bottom:10px;">
+                            <span>👥 Filleuls: <b>${user.nombre_filleuls || 0}</b></span>
+                            <span>🎁 Bonus Parrain: <b>${user.bonus_parrainage || 0} F</b></span>
+                        </div>
+                        
+                        <input type="number" id="amt-${user.id}" class="input-mini" placeholder="Montant à modifier">
                         
                         <div class="btn-group">
-                            <button class="btn-green" onclick="updateMoney(${index}, 'add')">AJOUTER ARGENT</button>
-                            <button class="btn-red" onclick="updateMoney(${index}, 'sub')">RETIRER ARGENT</button>
-                            <button class="btn-blue" onclick="updateCompteur(${index}, 1)">+1 INSCRIPTION</button>
-                            <button onclick="validerBonus15(${index})">🎁 METTRE 1200 FCFA</button>
+                            <button class="btn-green" onclick="updateField('${user.id}', 'solde', ${user.solde}, 'add')">DÉPÔT</button>
+                            <button class="btn-red" onclick="updateField('${user.id}', 'solde', ${user.solde}, 'sub')">RETRAIT</button>
+                            <button class="btn-blue" onclick="updateField('${user.id}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 INSCRI</button>
+                            <button class="btn-green" style="background:#2e7d32" onclick="validerBonus15('${user.id}', ${user.nombre_filleuls || 0}, ${user.solde})">PAYER 1200</button>
                         </div>
-                        <button class="btn-red" style="margin-top:10px; background:#444;" onclick="deleteUser(${index})">🚫 SUPPRIMER LE TRICHEUR</button>
+
+                        <div class="btn-group">
+                            <button class="btn-blue" style="background:#5c6bc0" onclick="updateField('${user.id}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 FILLEUL</button>
+                            <button class="btn-red" style="background:#444;" onclick="deleteUser('${user.id}')">SUPPRIMER</button>
+                        </div>
                     </div>`;
             });
         }
 
-        // Gérer l'argent (Solde)
-        function updateMoney(index, type) {
-            let users = JSON.parse(localStorage.getItem('BaseUtilisateurs'));
-            const amount = parseInt(document.getElementById(`amt-${index}`).value);
-            if(!amount) return alert("Écris un montant !");
+        async function updateField(userId, field, currentVal, action) {
+            let newVal;
+            const inputAmt = parseInt(document.getElementById(`amt-${userId}`).value);
 
-            if(type === 'add') users[index].solde = (users[index].solde || 0) + amount;
-            else users[index].solde = (users[index].solde || 0) - amount;
+            if (action === 'add') {
+                if(!inputAmt) return alert("Montant ?");
+                newVal = currentVal + inputAmt;
+            } else if (action === 'sub') {
+                if(!inputAmt) return alert("Montant ?");
+                newVal = (currentVal - inputAmt) < 0 ? 0 : currentVal - inputAmt;
+            } else if (action === 'add_one') {
+                newVal = (currentVal || 0) + 1;
+            }
 
-            save(users);
+            const { error } = await _supabase
+                .from('profils_promo') // Toujours utiliser profils_promo
+                .update({ [field]: newVal })
+                .eq('id', userId);
+
+            if(!error) {
+                document.getElementById(`amt-${userId}`).value = "";
+                loadDashboard();
+            }
         }
 
-        // Gérer le compteur (1, 2, 3...)
-        function updateCompteur(index, val) {
-            let users = JSON.parse(localStorage.getItem('BaseUtilisateurs'));
-            users[index].compteur = (users[index].compteur || 0) + val;
-            save(users);
-        }
+        async function validerBonus15(userId, nombre_filleuls, solde) {
+            if(nombre_filleuls >= 15) {
+                const { error } = await _supabase
+                    .from('profils_promo') // Toujours utiliser profils_promo
+                    .update({ solde: solde + 1200, nombre_filleuls: 0, bonus_parrainage: 1200 })
+                    .eq('id', userId);
 
-        // La règle des 1200 FCFA pour 15 inscriptions
-        function validerBonus15(index) {
-            let users = JSON.parse(localStorage.getItem('BaseUtilisateurs'));
-            if(users[index].compteur >= 15) {
-                users[index].solde = (users[index].solde || 0) + 1200;
-                users[index].compteur = 0; // On remet à zéro après avoir payé
-                alert("1200 FCFA ajoutés ! Compteur remis à zéro.");
-                save(users);
+                if(!error) {
+                    alert("Succès : 1200 F ajoutés !");
+                    loadDashboard();
+                }
             } else {
-                alert("Le compteur n'est pas encore à 15 !");
+                alert("Il faut 15 inscriptions !");
             }
         }
 
-        function deleteUser(index) {
-            if(confirm("Supprimer ce compte ?")) {
-                let users = JSON.parse(localStorage.getItem('BaseUtilisateurs'));
-                users.splice(index, 1);
-                save(users);
+        async function deleteUser(userId) {
+            if(confirm("Supprimer définitivement ce membre ?")) {
+                await _supabase.from('profils_promo').delete().eq('id', userId);
+                loadDashboard();
             }
-        }
-
-        function save(data) {
-            localStorage.setItem('BaseUtilisateurs', JSON.stringify(data));
-            loadDashboard();
         }
     </script>
 </body>

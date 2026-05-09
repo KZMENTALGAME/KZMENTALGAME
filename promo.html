@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZMENTALGAME - Programme Promo</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --gold: #ffcc00;
+            --dark: #121212;
+            --card-bg: #1e1e1e;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--dark);
+            color: var(--white);
+            margin: 0; padding: 0;
+        }
+
+        .container { padding: 15px; max-width: 450px; margin: auto; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+
+        .promo-list {
+            text-align: left;
+            background: rgba(46, 125, 50, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid var(--primary);
+            margin: 15px 0;
+        }
+
+        .promo-item {
+            margin: 8px 0;
+            font-size: 0.9em;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 6px; border: 1px solid #444;
+            background: #252525; color: white; box-sizing: border-box;
+        }
+
+        .btn-link {
+            background: var(--primary); color: white;
+            width: 100%; padding: 14px; border: none;
+            border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+
+        .link-display {
+            background: #333; padding: 10px; border-radius: 6px;
+            word-break: break-all; margin-top: 10px; color: var(--gold);
+            display: none;
+        }
+
+        .stat-box {
+            display: flex; justify-content: space-around; margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #252525; padding: 10px; border-radius: 8px; width: 45%;
+        }
+
+        .bonus-notify {
+            background: #4caf50; color: white; padding: 10px;
+            border-radius: 5px; margin-bottom: 15px; font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="btn-retour-container" style="position: absolute; top: 15px; left: 15px; z-index: 1000;">
+    <button onclick="allerVersProfil()" style="
+        background: rgba(0, 0, 0, 0.5); 
+        color: #4CAF50; 
+        border: 2px solid #4CAF50; 
+        border-radius: 50%; 
+        width: 40px; 
+        height: 40px; 
+        font-size: 20px; 
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;">
+        ✕
+    </button>
+</div>
+
+<script>
+function allerVersProfil() {
+    // Cette fonction force le retour à la page d'accueil ou du profil
+    window.location.href = "index.html"; 
+}
+</script>
+
+
+<div class="container">
+    <div class="card">
+        <h2 style="color: var(--primary);">LIEN PROMO KZ</h2>
+        
+        <div class="bonus-notify">🔥 BOOSTEZ VOS GAINS !</div>
+        
+        <div class="promo-list">
+            <div class="promo-item"><span>👥 15 Inscrits :</span> <b>1 200F CFA</b></div>
+            <div class="promo-item"><span>👥 20 Inscrits :</span> <b>1 800F CFA</b></div>
+            <div class="promo-item"><span>👥 30 Inscrits :</span> <b>3 500F CFA</b></div>
+            <div class="promo-item"><span>👥 40 Inscrits :</span> <b>5 000F CFA</b></div>
+            <div class="promo-item"><span>👥 80 Inscrits :</span> <b>15 000F CFA</b></div>
+        </div>
+
+        <p style="font-size: 0.8em; color: #aaa;">Entrez votre nom pour générer votre lien promo unique :</p>
+        <input type="text" id="user-name" placeholder="Votre nom ou pseudo">
+        <button class="btn-link" onclick="generatePromoLink()">CRÉER MON LIEN PROMO</button>
+
+        <div id="link-area" class="link-display"></div>
+        <button id="copy-btn" class="btn-link" style="background:#555; display:none; margin-top:5px;" onclick="copyLink()">Copier le lien</button>
+    </div>
+
+    <div class="card">
+        <h3>Mes Statistiques</h3>
+        <div class="stat-box">
+            <div class="stat-card">
+                <span style="font-size: 0.8em;">Filleuls Inscrits</span><br>
+                <b id="count-filleul" style="font-size: 1.5em; color: var(--primary);">0</b>
+            </div>
+            <div class="stat-card">
+                <span style="font-size: 0.8em;">Bonus Gagné</span><br>
+                <b id="bonus-total" style="font-size: 1.5em; color: var(--gold);">0F</b>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+
+<script>
+    const SUPABASE_URL = "https://vvnbdcjhugpdvywtraku.supabase.co";
+const SUPABASE_KEY = "sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv";
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Chargement automatique au démarrage
+    window.onload = async function() {
+    const savedName = localStorage.getItem('kz_promo_name');
+    
+    if (savedName) {
+        document.getElementById('user-name').value = savedName;
+        showLink(savedName);
+
+calculateBonus();
+
+        // On va chercher le vrai chiffre dans Supabase
+        const { data, error } = await supabaseClient
+            .from('profils_promo')
+            .select('nombre_filleuls')
+            .eq('code_promo', savedName)
+            .single();
+
+        if (data) {
+            // On affiche le chiffre qui vient de la base de données (le 15)
+            document.getElementById('count-filleul').innerText = data.nombre_filleuls;
+            calculateBonus(data.nombre_filleuls);
+            
+        }
+};
+}
+
+    function generatePromoLink() {
+        const name = document.getElementById('user-name').value.trim();
+        if(name === "") return alert("Veuillez entrer un nom.");
+
+        // Sauvegarde permanente dans le navigateur
+        localStorage.setItem('kz_promo_name', name);
+        showLink(name);
+        alert("Lien promo créé avec succès !");
+    }
+
+    function showLink(name) {
+        // Remplace 'tonsite.com' par l'URL réelle de ton application
+        const baseUrl = window.location.origin; 
+        const finalLink = baseUrl + "/inscription.html?ref=" + encodeURIComponent(name);
+        
+        const area = document.getElementById('link-area');
+        area.innerText = finalLink;
+        area.style.display = "block";
+        document.getElementById('copy-btn').style.display = "block";
+    }
+
+    function copyLink() {
+        const link = document.getElementById('link-area').innerText;
+        navigator.clipboard.writeText(link).then(() => {
+            alert("Lien copié ! Partagez-le pour gagner des bonus.");
+        });
+    }
+
+// --- CONNEXION ET MISE À JOUR AUTOMATIQUE ---
+
+
+async function calculateBonus(total) {
+    // On récupère automatiquement le nom de l'utilisateur connecté
+    const userData = JSON.parse(localStorage.getItem('userAccount'));
+    const nomParrain = userData ? userData.username : null;
+
+    if (!nomParrain) {
+        console.log("Aucun utilisateur connecté trouvé.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/profils_promo?code_promo=eq.${nomParrain}&select=nombre_filleuls`, {
+            headers: {
+                'apikey': SUPABASE_KEY,
+                'Authorization': `Bearer ${SUPABASE_KEY}`
+            }
+        });
+        const data = await response.json();
+        
+        if (data.length > 0) {
+            const total = data[0].nombre_filleuls;
+            
+            // Met à jour le compteur de filleuls (le chiffre vert)
+            document.getElementById('count-filleul').innerText = total;
+
+            // Calcule le bonus selon tes paliers
+            let bonus = 0;
+            if (total >= 80) bonus = 15000;
+            else if (total >= 40) bonus = 5000;
+            else if (total >= 30) bonus = 3500;
+            else if (total >= 20) bonus = 1800;
+            else if (total >= 15) bonus = 1200;
+
+            // Met à jour le bonus affiché (Bonus Gagné)
+            document.getElementById('bonus-total').innerText = bonus + " F";
+        }
+    } catch (e) { 
+        console.log("Erreur lors du chargement :", e); 
+    }
+}
+
+</script>
+
+</body>
+</html>
