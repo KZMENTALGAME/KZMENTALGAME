@@ -3,22 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DIRECTION KZ - Contrôle Direct</title>
+    <title>DIRECTION KZ - Contrôle Total</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { background: #121212; color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; }
         .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
         input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; outline: none; box-sizing: border-box; }
         button { background: #ff9800; color: black; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .user-row { background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #ff9800; }
+        .user-row { background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #ff9800; position: relative;}
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn-red { background: #f44336; color: white; }
-        .btn-green { background: #4CAF50; color: white; }
-        .btn-blue { background: #2196F3; color: white; }
-        .input-mini { background: #333; color: white; text-align: center; font-size: 16px; border: 1px solid #444; }
-        .stats-box { display: flex; justify-content: space-between; background: #333; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 14px; }
+        .btn-red { background: #f44336 !important; color: white; }
+        .btn-green { background: #4CAF50 !important; color: white; }
+        .btn-blue { background: #2196F3 !important; color: white; }
+        .btn-logout { background: #444; color: white; width: auto; padding: 8px 15px; margin-bottom: 10px;}
+        .input-mini { background: #333; color: #ff9800; text-align: center; font-size: 16px; border: 1px solid #444; font-weight: bold;}
+        .stats-box { display: grid; grid-template-columns: 1fr 1fr; background: #333; padding: 10px; border-radius: 8px; margin-top: 5px; font-size: 13px; gap: 5px;}
+        .stats-box b { color: #ff9800; }
         #adminContent { display: none; }
-        h1, h2, h3 { color: #ff9800; text-align: center; }
+        h1, h2, h3 { color: #ff9800; text-align: center; margin-bottom: 10px;}
+        .label-input { font-size: 11px; color: #aaa; margin-top: 5px; display: block;}
     </style>
 </head>
 <body>
@@ -30,15 +33,16 @@
     </div>
 
     <div id="adminContent">
+        <button class="btn-logout" onclick="logout()">⬅ Retour / Déconnexion</button>
         <h1>DIRECTION GÉNÉRALE</h1>
         
         <div class="card">
             <h3>📊 Statistiques Globales</h3>
-            <p>Total membres : <span id="totalUsers" style="font-size: 20px; font-weight: bold;">0</span></p>
-            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste</button>
+            <p>Membres actifs : <span id="totalUsers" style="font-size: 22px; font-weight: bold; color:#4CAF50;">0</span></p>
+            <button class="btn-blue" onclick="loadDashboard()">🔄 Actualiser la liste</button>
         </div>
 
-        <div id="userList">Chargement des données...</div>
+        <div id="userList">Chargement des membres...</div>
     </div>
 
     <script>
@@ -46,26 +50,42 @@
         const supabaseKey = 'sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv';
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
+        // Vérification automatique au chargement
+        window.onload = () => {
+            const savedPin = localStorage.getItem('kz_admin_auth');
+            if(savedPin === "Apodjax1") {
+                showAdmin();
+            }
+        };
+
         function checkPin() {
             const pin = document.getElementById('pinCode').value;
             if(pin === "Apodjax1") {
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('adminContent').style.display = 'block';
-                loadDashboard();
+                localStorage.setItem('kz_admin_auth', pin);
+                showAdmin();
             } else {
-                alert("Accès refusé !");
+                alert("Code incorrect !");
             }
+        }
+
+        function logout() {
+            localStorage.removeItem('kz_admin_auth');
+            location.reload();
+        }
+
+        function showAdmin() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('adminContent').style.display = 'block';
+            loadDashboard();
         }
 
         async function loadDashboard() {
             const { data: users, error } = await _supabase
                 .from('profils_promo')
-                .select('*');
+                .select('*')
+                .order('created_at', { ascending: false });
 
-            if (error) {
-                alert("Erreur de connexion : " + error.message);
-                return;
-            }
+            if (error) return alert("Erreur: " + error.message);
             
             document.getElementById('totalUsers').innerText = users.length;
             renderUsers(users);
@@ -76,76 +96,85 @@
             container.innerHTML = "";
             
             users.forEach((user) => {
-                // Utilisation de l'email comme identifiant unique
-                const id = user.email; 
                 container.innerHTML += `
                     <div class="user-row">
-                        <strong>👤 ${user.username || 'Anonyme'}</strong> (${user.phone || 'Pas de numéro'})
+                        <div style="margin-bottom:10px;">
+                            <strong style="font-size:18px;">👤 ${user.username || 'Sans nom'}</strong><br>
+                            <small>📞 ${user.phone || 'N/A'} | 📧 ${user.email}</small>
+                        </div>
                         
                         <div class="stats-box">
-                            <span>💰 Solde: <b>${user.solde || 0} F</b></span>
-                            <span>⭐ Inscrits: <b>${user.nombre_filleuls || 0}/15</b></span>
+                            <span>Principal: <b>${user.solde || 0} F</b></span>
+                            <span>Bonus: <b>${user.bonus_parrainage || 0} F</b></span>
+                            <span>Filleuls: <b>${user.nombre_filleuls || 0} / 15</b></span>
+                            <span>Code: <b>${user.code_promo || 'N/A'}</b></span>
                         </div>
                         
-                        <input type="number" id="amt-${user.username}" class="input-mini" placeholder="Montant">
-                        
-                        <div class="btn-group">
-                            <button class="btn-green" onclick="updateField('${user.email}', 'solde', ${user.solde}, 'add', '${user.username}')">DÉPÔT</button>
-                            <button class="btn-red" onclick="updateField('${user.email}', 'solde', ${user.solde}, 'sub', '${user.username}')">RETRAIT</button>
-                            <button class="btn-blue" onclick="updateField('${user.email}', 'nombre_filleuls', ${user.nombre_filleuls || 0}, 'add_one')">+1 INSCRI</button>
-                            <button class="btn-green" style="background:#2e7d32" onclick="validerBonus15('${user.email}', ${user.nombre_filleuls || 0}, ${user.solde})">PAYER 1200</button>
+                        <div style="margin-top:15px;">
+                            <span class="label-input">Action sur Solde Principal (Montant) :</span>
+                            <input type="number" id="amt-${user.id}" class="input-mini" placeholder="Ex: 5000">
+                            
+                            <div class="btn-group">
+                                <button class="btn-green" onclick="modifyMoney('${user.id}', ${user.solde}, 'add')">📥 DÉPÔT</button>
+                                <button class="btn-red" onclick="modifyMoney('${user.id}', ${user.solde}, 'sub')">📤 RETRAIT</button>
+                            </div>
+
+                            <span class="label-input">Modifier manuellement les compteurs :</span>
+                            <div class="btn-group">
+                                <button class="btn-blue" onclick="setManualValue('${user.id}', 'nombre_filleuls', 'Nouveau nbr filleuls')">✏️ Filleuls</button>
+                                <button class="btn-blue" onclick="setManualValue('${user.id}', 'bonus_parrainage', 'Nouveau solde bonus')">✏️ Bonus</button>
+                            </div>
+
+                            <button class="btn-green" style="background:#2e7d32 !important; margin-top:10px;" 
+                                onclick="validerBonus15('${user.id}', ${user.nombre_filleuls || 0}, ${user.solde || 0})">
+                                ✅ PAYER BONUS (Ajoute 1200 & Reset)
+                            </button>
                         </div>
-                        <button class="btn-red" style="background:#444; margin-top:10px;" onclick="deleteUser('${user.email}')">SUPPRIMER</button>
+
+                        <button class="btn-red" style="background:#333 !important; border:1px solid #555; margin-top:15px;" onclick="deleteUser('${user.id}')">🚫 BANNI / SUPPRIMER LE COMPTE</button>
                     </div>`;
             });
         }
 
-        async function updateField(email, field, currentVal, action, username) {
-            let newVal;
-            const inputElement = document.getElementById(`amt-${username}`);
-            const inputAmt = inputElement ? parseInt(inputElement.value) : 0;
+        // Fonction pour Dépôt et Retrait
+        async function modifyMoney(userId, currentVal, action) {
+            const inputElement = document.getElementById(`amt-${userId}`);
+            const amount = parseInt(inputElement.value);
+            if(!amount || amount <= 0) return alert("Entrez un montant valide !");
 
-            if (action === 'add') {
-                if(!inputAmt) return alert("Entrez un montant !");
-                newVal = (currentVal || 0) + inputAmt;
-            } else if (action === 'sub') {
-                if(!inputAmt) return alert("Entrez un montant !");
-                newVal = (currentVal || 0) - inputAmt;
-            } else if (action === 'add_one') {
-                newVal = (currentVal || 0) + 1;
-            }
-
-            const { error } = await _supabase
-                .from('profils_promo')
-                .update({ [field]: newVal })
-                .eq('email', email);
-
-            if(!error) {
-                if(inputElement) inputElement.value = "";
-                loadDashboard();
-            }
+            let newVal = (action === 'add') ? (currentVal + amount) : (currentVal - amount);
+            
+            const { error } = await _supabase.from('profils_promo').update({ solde: newVal }).eq('id', userId);
+            if(!error) { alert("Solde mis à jour !"); loadDashboard(); }
         }
 
-        async function validerBonus15(email, nombre_filleuls, solde) {
-            if(nombre_filleuls >= 15) {
-                const { error } = await _supabase
-                    .from('profils_promo')
-                    .update({ solde: solde + 1200, nombre_filleuls: 0 })
-                    .eq('email', email);
-
-                if(!error) {
-                    alert("Succès : 1200 F ajoutés !");
-                    loadDashboard();
-                }
-            } else {
-                alert("Il faut au moins 15 inscriptions !");
-            }
+        // Fonction pour modifier n'importe quelle valeur manuellement
+        async function setManualValue(userId, field, message) {
+            const newVal = prompt(message);
+            if (newVal === null) return;
+            
+            const { error } = await _supabase.from('profils_promo').update({ [field]: parseInt(newVal) }).eq('id', userId);
+            if(!error) loadDashboard();
         }
 
-        async function deleteUser(email) {
-            if(confirm("Supprimer ce membre ?")) {
-                await _supabase.from('profils_promo').delete().eq('email', email);
-                loadDashboard();
+        // Fonction Bonus
+        async function validerBonus15(userId, nbr, soldeActuel) {
+            if(nbr < 15) {
+                if(!confirm("L'utilisateur n'a pas encore 15 filleuls. Forcer le paiement ?")) return;
+            }
+            const { error } = await _supabase.from('profils_promo').update({ 
+                solde: soldeActuel + 1200, 
+                nombre_filleuls: 0,
+                bonus_parrainage: 0 
+            }).eq('id', userId);
+
+            if(!error) { alert("1200 F versés au solde principal !"); loadDashboard(); }
+        }
+
+        async function deleteUser(userId) {
+            if(confirm("⚠️ Action irréversible : Supprimer définitivement ce compte ?")) {
+                const { error } = await _supabase.from('profils_promo').delete().eq('id', userId);
+                if(!error) loadDashboard();
             }
         }
     </script>
