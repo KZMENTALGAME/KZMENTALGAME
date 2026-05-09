@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZMENTALGAME - Officiel</title>
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --mtn: #ffcc00;
+            --moov: #0056b3;
+            --pink: #e91e63;
+            --dark: #121212;
+            --card-bg: #1e1e1e;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--dark);
+            color: var(--white);
+            margin: 0; padding: 0;
+        }
+
+        #notification-bar {
+            background: rgba(0,0,0,0.9);
+            padding: 10px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary);
+            color: #4caf50;
+            font-size: 0.9em;
+        }
+
+
+        .container { padding: 15px; max-width: 450px; margin: auto; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .club-display {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 15px 0;
+        }
+
+        .club-box {
+            text-align: center;
+            width: 45%;
+            padding: 10px;
+            border: 2px solid #333;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+
+        /* Cadre de sélection (cocher le club) */
+        .club-box.selected {
+            border-color: var(--primary);
+            background: rgba(46, 125, 50, 0.15);
+        }
+
+        .club-box.selected::after {
+            content: '✅';
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: white;
+            border-radius: 50%;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+
+        .btn-recharge { background: var(--primary); color: white; }
+        .btn-retrait { background: var(--pink); color: white; }
+        .btn-gmail { background: #007bff; color: white; }
+        .btn-whatsapp { background: #25d366; color: white; }
+        
+        input {
+            width: 100%; padding: 12px; margin: 8px 0;
+            border-radius: 6px; border: 1px solid #444;
+            background: #252525; color: white; box-sizing: border-box;
+        }
+
+        #football-field {
+            width: 100%; height: 180px; background: #388e3c;
+            margin: 10px 0; border: 2px solid white;
+            position: relative; display: none; border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .player {
+            width: 20px; height: 20px; position: absolute;
+            background: url('https://cdn-icons-png.flaticon.com/128/701/701440.png');
+            background-size: contain; transition: 0.8s linear;
+        }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+ <div style="text-align: center; margin-top: 15px; padding: 10px;">
+    <a href="KZMENTALGAME.apk" download 
+       style="background: #007bff; 
+              color: black; 
+              padding: 12px 20px; 
+              border-radius: 8px; 
+              text-decoration: none; 
+              font-weight: bold; 
+              display: inline-block; 
+              box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+              border: 2px solid #0056b3;
+              font-family: sans-serif;
+              width: 80%;">
+       INSTALLER L'APPLICATION
+    </a>
+</div>
+
+
+    <div class="header-profile" style="display: flex; justify-content: flex-end; padding: 10px; align-items: center; gap: 10px;">
+     <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="toggleProfile()">
+    <span style="color: #FFD700; font-weight: bold; font-size: 0.9em; text-transform: uppercase;">Profil</span>
+    <div id="user-circle" style="width: 40px; height: 40px; border-radius: 50%; background: #FFD700; border: 2px solid white; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;">
+        <span id="user-initial" style="color: black; font-weight: bold; font-size: 1.2em;">I</span>
+        <img id="top-user-photo" src="" style="width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top: 0; left: 0;">
+    </div>
+</div>
+<div id="profile-menu" style="display: none; position: fixed; top: 10px; left: 10px; right: 10px; background: #1a1a1a; border: 2px solid #FFD700; border-radius: 15px; padding: 20px; z-index: 2000; color: white;">
+    
+    <button onclick="toggleProfile()" style="background: #ff4444; color: white; border: none; padding: 5px 15px; border-radius: 5px; cursor: pointer; float: right;">Retour</button>
+    
+    <h2 style="color: #FFD700; text-align: center;">MON COMPTE</h2>
+
+    <div style="text-align: center; margin-top: 20px;" onclick="document.getElementById('input-photo').click()">
+        <div id="menu-circle" style="width: 100px; height: 100px; border-radius: 50%; background: #FFD700; margin: 0 auto; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 3px solid white;">
+            <span id="menu-initial" style="font-size: 3em; color: black; font-weight: bold;">I</span>
+            <img id="menu-photo" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+        </div>
+        <p style="font-size: 0.8em; color: #FFD700;">Cliquez pour changer la photo</p>
+        <input type="file" id="input-photo" accept="image/*" style="display: none;" onchange="mettreAJourPhoto(this)">
+    </div>
+
+    <div style="margin-top: 20px; border-top: 1px solid #333; padding-top: 10px;">
+        <p><b>👤 Nom :</b> <span id="info-nom">TYFAO KAZOR</span></p>
+        <p><b>📧 Email :</b> <span id="info-email">chargement...</span></p>
+        <p><b>📞 Tel :</b> <span id="info-tel">chargement...</span></p>
+        <p><b>📅 Créé le :</b> <span id="info-date">03/05/2026</span></p>
+    </div>
+</div>
+<button onclick="demanderDeconnexion()" style="width: 100%; background: #ff9800; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold;">
+    Se déconnecter
+</button>
+
+
+</div>
+
+
+
+<div id="notification-bar">Connexion au serveur KZ...</div>
+
+<div class="container">
+
+    <div class="card" style="text-align:center;">
+        <h2 style="margin:0; color:var(--primary);">KZMENTALGAME</h2>
+        <p>Solde : <b id="balance">0</b> FCFA</p>
+    </div>
+
+<div id="menu-principal" style="text-align: center; padding: 20px;">
+    <button onclick="ouvrirJeu()" style="width: 100%; background-color: #00FF00; color: #000; padding: 15px; border: none; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; box-shadow: 0 4px #008000;">
+        🎮 ACCÉDER AU JEU
+    </button>
+</div>
+
+          <div id="section-jeu" style="display: none;">
+              
+              <div style="padding: 10px 15px;">
+    <button onclick="retourAccueil()" style="
+        width: 100%; 
+        background: #0056ff; 
+        color: #ffffff; 
+        border: 2px solid #00c6ff; 
+        padding: 14px; 
+        border-radius: 12px; 
+        font-size: 15px; 
+        font-weight: bold; 
+        text-transform: uppercase; 
+        box-shadow: 0 0 15px rgba(0, 86, 255, 0.4);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    ">
+        <span style="margin-right: 10px;">⬅️</span> RETOUR À L'ACCUEIL
+    </button>
+</div>
+
+
+    <div class="card">
+        <h3 style="text-align:center; margin-top:0;">Match en Direct (Côte 2.0)</h3>
+        <div class="club-display">
+            <div class="club-box" id="box1" onclick="selectClub(1)">
+                <img id="logo1" src="" width="50" height="50"><br>
+                <span id="nom1">Club A</span>
+            </div>
+            <b>VS</b>
+            <div class="club-box" id="box2" onclick="selectClub(2)">
+                <img id="logo2" src="" width="50" height="50"><br>
+                <span id="nom2">Club B</span>
+            </div>
+         </div>
+        <input type="number" id="bet-amount" placeholder="Mise (Min 400F)">
+        <p id="message-info" style="color: #ffcc00; text-align: center; font-size: 14px; margin: 5px 0; font-weight: bold;"></p>
+        
+        <button class="btn-recharge" onclick="startMatch()">Lancer le pari (8s)</button>
+      
+        <div id="football-field">
+            <div class="player" id="p1" style="left:20%; top:40%;"></div>
+            <div class="player" id="p2" style="left:70%; top:50%; filter: hue-rotate(90deg);"></div>
+        </div>
+        <p id="match-status" style="text-align:center; font-weight:bold;"></p>
+    </div>
+    
+    </div>
+    <div class="card">
+        
+        <button class="btn-recharge" onclick="toggleDiv('recharge-options')">💰 RECHARGER MON COMPTE</button>
+        <div id="recharge-options" class="hidden">
+            <div style="margin: 10px; padding: 12px; background: rgba(0, 255, 0, 0.05); border: 1.5px solid #00FF00; border-radius: 10px; font-family: sans-serif;">
+    
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 20px; margin-right: 10px;">🛡️</span>
+        <b style="color: #00FF00; font-size: 14px; text-transform: uppercase;">Fiabilité & Sécurité 100%</b>
+    </div>
+
+    <div style="margin-bottom: 12px;">
+        <p style="color: #adff2f; font-size: 13px; margin: 0; line-height: 1.4;">
+            <b style="color: #fff;">I. AU BÉNIN (🇧🇯) :</b><br>
+            Copiez l'un des numéros ci-dessous pour faire votre dépôt. 
+            <span style="color: #ffcc00; font-weight: bold;">NB : Pas besoin d'ajouter le code (+229)</span> lors de l'envoi sur votre téléphone, tapez directement le numéro.
+        </p>
+    </div>
+
+    <div>
+        <p style="color: #adff2f; font-size: 13px; margin: 0; line-height: 1.4;">
+            <b style="color: #fff;">II. À L'ÉTRANGER (🇹🇬, 🇨🇮, 🇸🇳, etc.) :</b><br>
+            Effectuez un Transfert International (via MTN, Moov, T-Money ou Wave) vers nos numéros officiels. 
+            Votre argent est <span style="text-decoration: underline;">sécurisé à 100%</span> par notre plateforme.
+        </p>
+    </div>
+
+</div>
+
+            <div style="background:var(--mtn); color:black; padding:10px; border-radius:8px; margin-bottom:5px; display:flex; justify-content:space-between;">
+                <b>🟡 MTN : +2290190380277</b>
+                <button style="width:auto; padding:2px 10px; background:black; color:white;" onclick="copyNum('+2290190380277')">Copier</button>
+            </div>
+            <div style="background:var(--moov); color:white; padding:10px; border-radius:8px; margin-bottom:10px; display:flex; justify-content:space-between;">
+                <b>🔵 MOOV : +2290199832486</b>
+                <button style="width:auto; padding:2px 10px; background:white; color:black;" onclick="copyNum('+2290160614456')">Copier</button>
+
+            </div>
+            <div style="margin: 15px 5px; padding: 15px; background: rgba(255, 255, 255, 0.05); border: 1px solid #333; border-radius: 12px; font-family: sans-serif; text-align: left;">
+    
+    <h4 style="color: #00FF00; margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase;">A. OBTENIR VOTRE CODE DE TICKET :</h4>
+    <div style="color: #ccc; font-size: 12px; line-height: 1.6; margin-bottom: 15px;">
+        • Effectuez votre dépôt.<br>
+        • Prenez une Capture d'écran nette.<br>
+        • Cliquez sur le bouton "ENVOYER LA PREUVE" ci-dessous.
+    </div>
+
+    <form action="https://formspree.io/f/xpqkrzrb" method="POST" enctype="multipart/form-data" target="vostra_iframe" onsubmit="document.getElementById('msg_ok').style.display='block'; document.getElementById('form_corps').style.display='none';">
+        
+        <div id="form_corps">
+            <label style="color: #fff; display: block; margin-bottom: 8px; font-size: 12px; font-weight: bold;">📸 SÉLECTIONNEZ VOTRE CAPTURE :</label>
+            <input type="file" name="preuve" accept="image/*" required style="color: white; font-size: 11px; margin-bottom: 10px; width: 100%;">
+            
+            <button type="submit" style="width: 100%; background-color: #00FF00; color: #000; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; text-transform: uppercase;">
+                🚀 ENVOYER LA PREUVE DE DÉPÔT
+            </button>
+        </div>
+
+        <div id="msg_ok" style="display:none; background: rgba(0,255,0,0.1); padding: 10px; border-radius: 5px; border: 1px solid #00FF00; text-align: center;">
+            <p style="color: #00FF00; font-size: 13px; margin: 0; font-weight: bold;">✅ Preuve envoyée avec succès !</p>
+        </div>
+    </form>
+
+    <iframe name="vostra_iframe" id="vostra_iframe" style="display:none;"></iframe>
+
+    <h4 style="color: #00FF00; margin: 15px 0 8px 0; font-size: 14px; text-transform: uppercase;">B. ACTIVATION :</h4>
+    <p style="color: #ccc; font-size: 12px; margin: 0;">Après réception, l'équipe vous enverra un Code de Ticket.</p>
+
+    <p style="color: #ffcc00; font-size: 11px; font-style: italic; margin-top: 10px; border-top: 1px solid #444; padding-top: 10px;">
+        ⚠️ <b>NB:</b> N'oubliez pas de cliquer sur l'un des supports (Gmail recommandé) ci-dessous pour avoir votre code.
+    </p>
+</div>
+
+            <button class="btn-gmail" onclick="contactSupport('RECHARGE','GMAIL')">📧 GMAIL Support</button>
+            <button class="btn-whatsapp" onclick="contactSupport('RECHARGE','WA')">💬 WHATSAPP Support</button>
+            <input type="text" id="ticket-code" placeholder="Code Ticket (Entrez votre code du ticket)">
+          <button onclick="validateTicket()" style="width: 100%; background: #4caf50; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 10px;">
+    VALIDER TICKET
+</button>
+
+        </div>
+    </div>
+
+    <div class="card">
+        <button class="btn-retrait" onclick="toggleDiv('retrait-options')">💸 FAIRE UN RETRAIT</button>
+        <div id="retrait-options" class="hidden">
+            <p style="color:var(--pink); font-size:0.8em;">⚠️ Minimum 5000F (Somme paire uniquement)</p>
+            <input type="number" id="withdraw-amount" placeholder="Somme à retirer">
+            <button class="btn-gmail" onclick="contactSupport('RETRAIT','GMAIL')">📧 GMAIL Retrait</button>
+            <button class="btn-whatsapp" onclick="contactSupport('RETRAIT','WA')">💬 WHATSAPP Retrait</button>
+        </div>
+    </div>
+    <div style="margin-top: 20px;">
+    <a href="promo.html" style="text-decoration: none;">
+        <button style="background-color: #FFD700; color: black; width: 100%; padding: 15px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer;">
+            📢 TRAVAILLER DANS LA DIRECTION DU PARIS (GAGNER DES BONUS)
+        </button>
+    </a>
+</div>
+
+</div>
+
+<script>
+    let consecutiveLosses = 0; // On commence à zéro
+    const stars = ["K. Mbappé", "L. Messi", "C. Ronaldo", "Vinícius Jr", "E. Haaland", "Neymar Jr", "Lamine Yamal", "J. Bellingham", "K. De Bruyne", "R. Lewandowski", "Mo Salah", "Antoine Griezmann", "Harry Kane", "Bukayo Saka", "Phil Foden", "Victor Osimhen", "Sadio Mané", "Luka Modrić", "Achraf Hakimi", "Rodrygo"];
+    
+    
+    let usedTickets = new Set(JSON.parse(localStorage.getItem('kz_used_tickets')) || []);
+    
+
+    // Empêche l'accès si l'utilisateur n'est pas connecté
+if (!localStorage.getItem('user_connected')) {
+    window.location.href = "inscription.html";
+}
+
+// On récupère le solde sauvegardé dans le téléphone
+let balance = parseFloat(localStorage.getItem('mon_solde_kz')) || 0;
+
+// On l'affiche tout de suite sur l'écran au démarrage
+setTimeout(() => {
+    const balanceElement = document.getElementById('balance');
+    if (balanceElement) balanceElement.innerText = balance;
+}, 100);
+
+    let selectedClub = 0;
+    
+    function ouvrirJeu() {
+    // 1. On affiche la section du match
+    document.getElementById('section-jeu').style.display = 'block';
+
+    // 2. On cache UNIQUEMENT les 3 boutons gênants et le bouton accéder
+    let boutons = document.querySelectorAll('button');
+    boutons.forEach(btn => {
+        let texte = btn.innerText.toUpperCase();
+        if (texte.includes("RECHARGER") || 
+            texte.includes("RETRAIT") || 
+            texte.includes("TRAVAILLER") || 
+            texte.includes("ACCÉDER")) {
+            btn.style.display = 'none';
+        }
+    });
+}
+
+function retourAccueil() {
+    // 1. On cache le match
+    document.getElementById('section-jeu').style.display = 'none';
+
+    // 2. On fait réapparaître tous les boutons
+    let boutons = document.querySelectorAll('button');
+    boutons.forEach(btn => {
+        btn.style.display = 'block';
+    });
+}
+
+
+    const listeClubs = [
+        {nom:"Real Madrid", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"FC Barcelone", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"Man City", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Bayern", img:"https://cdn-icons-png.flaticon.com/128/197/197571.png"},
+        {nom:"PSG", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Arsenal", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Juventus", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Liverpool", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"AC Milan", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Dortmund", img:"https://cdn-icons-png.flaticon.com/128/197/197571.png"},
+        {nom:"Chelsea", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Atlético", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"Inter Milan", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Marseille", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Lyon", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Naples", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Al-Nassr", img:"https://cdn-icons-png.flaticon.com/128/197/197561.png"},
+        {nom:"Inter Miami", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Benfica", img:"https://cdn-icons-png.flaticon.com/128/197/197633.png"},
+        {nom:"Porto", img:"https://cdn-icons-png.flaticon.com/128/197/197633.png"},
+        {nom:"Boca Juniors", img:"https://cdn-icons-png.flaticon.com/128/197/197573.png"},
+        {nom:"River Plate", img:"https://cdn-icons-png.flaticon.com/128/197/197573.png"},
+        {nom:"Flamengo", img:"https://cdn-icons-png.flaticon.com/128/197/197386.png"},
+        {nom:"Ajax", img:"https://cdn-icons-png.flaticon.com/128/197/197441.png"},
+        {nom:"Leverkusen", img:"https://cdn-icons-png.flaticon.com/128/197/197571.png"},
+        {nom:"Roma", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Tottenham", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Lille", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Monaco", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Galatasaray", img:"https://cdn-icons-png.flaticon.com/128/197/197518.png"},
+        {nom:"Séville", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"Villa", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Lazio", img:"https://cdn-icons-png.flaticon.com/128/197/197626.png"},
+        {nom:"Sporting", img:"https://cdn-icons-png.flaticon.com/128/197/197633.png"},
+        {nom:"Feyenoord", img:"https://cdn-icons-png.flaticon.com/128/197/197441.png"},
+        {nom:"Real Betis", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"Valencia", img:"https://cdn-icons-png.flaticon.com/128/197/197593.png"},
+        {nom:"Everton", img:"https://cdn-icons-png.flaticon.com/128/197/197484.png"},
+        {nom:"Nice", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"},
+        {nom:"Rennes", img:"https://cdn-icons-png.flaticon.com/128/197/197560.png"}
+    ];
+
+const noms = [
+    "Moussa Denis", "Jacqueline", "Denis Basile", "Geneviève", "Odilon Édouard", 
+    "Mélaine", "Raymond Lucien", "Alix", "Guillaume", "Pauline Tatiana", 
+    "Yvette", "Nina", "Rémi Marcel", "Roseline", "Prisca", "Marius Sébastien", 
+    "Agnès", "Vincent Barnard", "François de Sales", "Paule", "Angèle", 
+    "Thomas d'Aquin", "Gildas", "Martine Marcelle", "Ella", "Théophane", 
+    "Blaise Véronique", "Agathe", "Gaston Eugénie", "Apolline", "Arnaud Félix", 
+    "Béatrice", "Valentin Claude", "Julienne", "Alexis Bernadette", "Gabin", 
+    "Aimée Damien", "Isabelle", "Lazare Modeste", "Roméo", "Nestor Honorine", 
+    "Romain", "Aubin Charles", "Guénolé", "Casimir Olive", "Colette", 
+    "Félicité", "Jean de Dieu", "Françoise", "Vivien Rosine", "Justine", 
+    "Rodrigue Mathilde", "Louise", "Bénédicte Patrick", "Cyrille", 
+    "Joseph Herbert", "Clémence", "Léa Victorien", "Catherine", "Humbert", 
+    "Larissa Habib", "Gontran", "Gwladys Amédée", "Benjamin", "Sandrine Richard", 
+    "Isidore", "Irène Marcellin", "Jean Baptiste", "Julie", "Gautier Fulbert", 
+    "Stanislas", "Jules Ida", "Maxime", "Paterne Benoît", "Joseph Anicet", 
+    "Parfait", "Emma Odette", "Anselme", "Alexandre Georges", "Fidèle", 
+    "Marc Alida", "Zita", "Valérie Catherine", "Robert", "Jérémie Boris", 
+    "Philippe", "Jacques Sylvain", "Judith", "Prudence Gisèle", "Désiré", 
+    "Pacôme Solange", "Estelle", "Achille Rolande", "Matthias", "Denise Honoré", 
+    "Pascal", "Éric Yves", "Bernardin", "Constantin Émile", "Didier", 
+    "Donatien Sophie", "Bérenger", "Augustin Germain", "Aymar", "Ferdinand Perrette", 
+    "Justin", "Blandine Kévin", "Clotilde", "Igor Norbert", "Gilbert", 
+    "Médard Diane", "Landry", "Barnabé Guy", "Antoine", "Elisée Germaine", 
+    "Jean François", "Hervé", "Léonce Romuald", "Silvère", "Rodolphe Alban", 
+    "Audrey", "Prosper Anthelme", "Fernand", "Irénée Pierre", "Paul", 
+    "Martial Thierry", "Martinien", "Thomas Florent", "Antoine Mariette", 
+    "Raoul", "Thibault Amandine", "Ulrich", "Benoît Olivier", "Henri", 
+    "Joël Camille", "Donald", "Charlotte Frédéric", "Arsène", "Marina Victor", 
+    "Marie Madeleine", "Brigitte", "Christine", "Joachim Nathalie", "Samson", 
+    "Marthe Juliette", "Ignace", "Alphonse Julien", "Lydie", "Jean Marie", 
+    "Abel", "Gaétan Dominique", "Amour", "Laurent Claire", "Clarisse", 
+    "Hippolyte Évrard", "Marie Armel", "Hyacinthe", "Hélène Jean", "Bernard", 
+    "Christophe Fabrice", "Rose", "Barthélemy Louis", "Natacha", "Monique Sabine", 
+    "Fiacre", "Aristide Gilles", "Ingrid", "Grégoire Rosalie", "Raïssa", 
+    "Bertrand Reine", "Alain", "Inès Adelphe", "Apollinaire", "Aimé Roland", 
+    "Édith", "Renaud Nadège", "Émilie", "Davy Matthieu", "Maurice", 
+    "Constant Thècle", "Hermann", "Côme Damien", "Vincent de Paul", "Venceslas", 
+    "Michel Gabriel", "Raphaël", "Jérôme Thérèse", "Léger", "Gérard François", 
+    "Fleur", "Bruno Serge", "Pélagie", "Denis Ghislain", "Firmin", 
+    "Wilfried Géraud", "Juste", "Thérèse d'Avila", "Edwige", "Baudouin Luc", 
+    "René", "Adeline Céline", "Élodie", "Jean de Capistran", "Florentin", 
+    "Crépin Dimitri", "Émeline", "Jude Simon", "Narcisse", "Bienvenue Quentin", 
+    "Hubert", "Charles Sylvie", "Bertille", "Carine Geoffroy", "Théodore", 
+    "Léon Martin", "Christian", "Brice Sidoine", "Albert", "Marguerite", 
+    "Élisabeth Aude", "Tanguy", "Edmond Cécile", "Clément", "Flora Delphine", 
+    "Séverin", "Jacques Saturnin", "André", "Florence Viviane", "François Xavier", 
+    "Barbara", "Gérald Nicolas", "Ambroise", "Pierre Fourier", "Romaric", 
+    "Daniel Jeanne", "Françoise", "Lucie Odile", "Ninon", "Alice Gaël", 
+    "Gatien", "Urbain Théophile", "Pierre Canisius", "Françoise Xavière", 
+    "Armand", "Adèle Étienne", "Jean David", "Roger", "Sylvestre"
+];
+
+    function updateNotify() {
+        const n = noms[Math.floor(Math.random()*noms.length)];
+        const a = Math.random() > 0.5 ? "rechargé" : "retiré";
+        const s = a === "rechargé" ? 1200 : 5000;
+        document.getElementById('notification-bar').innerText = `📢 ${n} vient de ${a} ${s} FCFA avec succès !`;
+        setTimeout(updateNotify, 3000);
+    }
+    updateNotify();
+
+    function refreshMatch() {
+    let i1 = Math.floor(Math.random() * listeClubs.length);
+    let i2 = Math.floor(Math.random() * listeClubs.length);
+    while(i1 === i2) i2 = Math.floor(Math.random() * listeClubs.length);
+
+    // VÉRIFICATION AVANT D'ÉCRIRE
+    const n1 = document.getElementById('nom1');
+    const l1 = document.getElementById('logo1');
+    const n2 = document.getElementById('nom2');
+    const l2 = document.getElementById('logo2');
+
+    if (n1) n1.innerText = listeClubs[i1].nom;
+    if (l1) l1.src = listeClubs[i1].img;
+    if (n2) n2.innerText = listeClubs[i2].nom;
+    if (l2) l2.src = listeClubs[i2].img;
+
+    selectedClub = 0;
+    document.querySelectorAll('.club-box').forEach(b => {
+        if (b) b.classList.remove('selected');
+    });
+}
+
+    refreshMatch();
+
+    function selectClub(n) {
+        selectedClub = n;
+        document.querySelectorAll('.club-box').forEach(b => b.classList.remove('selected'));
+        document.getElementById('box'+n).classList.add('selected');
+    }
+
+    function startMatch() {
+        const amt = parseInt(document.getElementById('bet-amount').value);
+            const msgZone = document.getElementById('message-info');
+    msgZone.innerText = ""; 
+
+    if (!selectedClub) {
+        msgZone.innerText = "Choisissez votre club avant de lancer le pari.";
+        return;
+    }
+
+    if (isNaN(amt) || amt < 400) {
+        msgZone.innerText = "Mise insuffisante. Le minimum est de 400F CFA.";
+        return;
+    }
+
+    if (amt > balance) {
+        msgZone.innerText = "Solde insuffisant. Veuillez recharger votre compte.";
+        return;
+    }
+    
+
+        
+        balance -= amt;
+        document.getElementById('balance').innerText = balance;
+ localStorage.setItem('solde_' + localStorage.getItem('user_connected'), balance);
+ 
+        
+        document.getElementById('football-field').style.display = "block";
+        document.getElementById('match-status').innerText = "Match en cours...";
+
+        // Animation des joueurs
+        const moves = setInterval(() => {
+            document.getElementById('p1').style.left = Math.random()*80+"%";
+            document.getElementById('p1').style.top = Math.random()*70+"%";
+            document.getElementById('p2').style.left = Math.random()*80+"%";
+            document.getElementById('p2').style.top = Math.random()*70+"%";
+        }, 800);
+
+        setTimeout(() => {
+            clearInterval(moves);
+            document.getElementById('football-field').style.display = "none";
+            // Règle de chance
+            let winProb;
+
+// 1. On vérifie d'abord si le joueur a trop perdu (le coup de pouce)
+if (consecutiveLosses >= 3) {
+    winProb = 0.9; // 90% de chance de gagner pour lui redonner le sourire !
+} 
+// 2. Sinon, on applique tes règles habituelles
+else if (amt >= 4000) {
+    winProb = 0.30;
+} else if (amt >= 3000) {
+    winProb = 0.4;
+} else if (amt >= 2000) {
+    winProb = 0.45;
+} else {
+    winProb = 0.5;
+}
+
+let win = Math.random() < winProb;
+
+// 3. MISE À JOUR DU COMPTEUR (Très important)
+if (win) {
+    consecutiveLosses = 0; // Il a gagné, on remet le compteur à zéro
+} else {
+    consecutiveLosses += 1; // Il a perdu, on ajoute 1 au compteur
+}
+
+// On choisit un joueur star au hasard pour l'action
+let player = stars[Math.floor(Math.random() * stars.length)];
+
+if (win) {
+    balance += amt * 2;
+    consecutiveLosses = 0;
+    
+    // Liste des messages de VICTOIRE (Le joueur sait qu'il a GAGNÉ grâce au + montant)
+    const winMessages = [
+        `BUT de ${player} ! ⚽ Ta technique est incroyable champion !`,
+        `INCROYABLE ! 🌟 ${player} a foudroyé le gardien pour toi !`,
+        `MAGNIFIQUE ! 🏟️ ${player} marque et t'offre la victoire !`,
+        `GOAL ! 🔥 Grâce à ${player}, ton solde explose !`,
+        `QUEL TIR ! 🚀 ${player} a déchiré les filets pour ce succès !`,
+        `CHAMPION ! 🏆 ${player} t'a porté vers les sommets !`,
+        `EXPLOSIF ! 🔥 Une passe décisive de ${player} et c'est le gain !`,
+        `GÉNIE ! 🧠 ${player} a trouvé la faille, bravo à toi !`,
+        `VICTOIRE ! 🥁 Le stade scande ton nom et celui de ${player} !`,
+        `PROPRE ! ✨ ${player} finit le travail en beauté. Félicitations !`
+    ];
+    
+    let msgV = winMessages[Math.floor(Math.random() * winMessages.length)];
+    document.getElementById('match-status').innerHTML = `<span style='color:lime'>🏆 ${msgV} <br><b>+${amt*2}F</b></span>`;
+
+} else {
+    consecutiveLosses += 1;
+    
+    // Liste des messages de DÉFAITE (Le bleu encourage à reprendre sa revanche)
+    const lossMessages = [
+        `DOMMAGE ! 😱 ${player} a frappé le poteau au dernier moment...`,
+        `OH NON ! 🛑 Le gardien a arrêté la frappe de ${player}.`,
+        `À UN CHEVEU ! 🏳️ ${player} était hors-jeu sur cette action.`,
+        `QUELLE POISSE ! 🌧️ La défense a contré ${player}. Relance vite !`,
+        `RATÉ ! 🥅 ${player} a manqué le cadre, mais la prochaine est la bonne !`,
+        `ZUT ! 📉 ${player} était fatigué, ta revanche arrive !`,
+        `DOMMAGE ! 🧤 Le gardien adverse a stoppé net ${player}.`,
+        `PAS DE CHANCE ! 🌪️ Le tir de ${player} s'envole... Rejoue !`,
+        `STOPPÉ ! 🚧 ${player} a perdu son duel. Montre-leur ta force !`,
+        `COURAGE ! 💪 ${player} va se rattraper au prochain match !`
+    ];
+    
+    let msgD = lossMessages[Math.floor(Math.random() * lossMessages.length)];
+    document.getElementById('match-status').innerHTML = `<span style='color:#3498db'>⚽ ${msgD} <br><b>Revanche immédiate ?</b></span>`;
+}
+            document.getElementById('balance').innerText = balance;
+            refreshMatch();
+        }, 8000);
+    }
+
+    function toggleDiv(id) { document.getElementById(id).classList.toggle('hidden'); }
+    function copyNum(n) { navigator.clipboard.writeText(n).then(() => alert("Copié !")); }
+
+    function contactSupport(mode, type) {
+        let amt = (mode === 'RETRAIT') ? document.getElementById('withdraw-amount').value : "";
+        let msg = (mode === 'RECHARGE') ? "Salut, je souhaite recharger mon compte KZ. Je vous ai déjà envoyé la capture d'écran qui confirme mon dépôt. S'il vous plaît, veuillez m'envoyer mon code de ticket." : `Salut, je souhaite retirer ${amt}F. Mon numéro : .......... Nom : ..........`;
+        if(type === 'GMAIL') window.location.href = `mailto:sitepopulaire64@gmail.com?subject=${mode}&body=${encodeURIComponent(msg)}`;
+        else window.location.href = `https://wa.me/22990380277?text=${encodeURIComponent(msg)}`;
+    }
+      function validateTicket() {
+        const c = document.getElementById('ticket-code').value;
+        if(c.startsWith("KZ") && c.endsWith("Z") && !usedTickets.has(c)) {
+            let v = parseInt(c.match(/\d+/));
+            if(v >= 1200) {
+                balance += v; usedTickets.add(c);
+localStorage.setItem('kz_used_tickets', JSON.stringify(Array.from(usedTickets)));
+
+                document.getElementById('balance').innerText = balance;
+                localStorage.setItem('kz_used_tickets', JSON.stringify(Array.from(usedTickets)));
+                
+                alert("✅ COMPTE CRÉDITÉ AVEC SUCCÈS !\n\n㊗️FÉLICITATIONS🥂, VOTRE SOLDE🏦 A ÉTÉ MIS À JOUR💱.");
+                localStorage.setItem('mon_solde_kz', balance);
+            }
+        } else alert("🚨 ALERTE DE SÉCURITÉ : TENTATIVE DE FRAUDE DETECTÉE 🚨\n\n" +
+      "❌ CODE INVALIDE OU DÉJÀ CONSOMMÉ.\n\n" +
+      "⚠️ AVERTISSEMENT : Toute tentative de manipulation ou de réutilisation de ticket est enregistrée. " +
+      "Conformément à nos conditions, tout compte suspecté de triche sera définitivement bloqué et les demandes de retrait seront systématiquement rejetées.\n\n" +
+      "👉 VÉRIFICATION : Assurez-vous d'avoir acheté un ticket authentique auprès du support officiel pour recevoir un code de recharge valide.");
+      document.getElementById('ticket-code').value = "";
+      
+      }
+    
+ 
+    // --- FONCTION POUR OUVRIR LE PROFIL ---
+function toggleProfile() {
+    const card = document.getElementById('profile-card');
+    if (card.classList.contains('hidden')) {
+        card.classList.remove('hidden');
+    } else {
+        card.classList.add('hidden');
+    }
+}
+
+// --- CHARGEMENT AUTOMATIQUE DES INFOS ---
+window.addEventListener('load', function() {
+    const userEmail = localStorage.getItem('user_connected');
+    if (userEmail) {
+    const userData = JSON.parse(localStorage.getItem('userAccount'));
+    
+        if (userData) {
+            // CORRECTION DES IDS : On utilise info-nom, info-email et info-tel
+            if(document.getElementById('info-nom')) {
+                document.getElementById('info-nom').innerText = userData.user || userData.username || "investisseur";
+            }
+            if(document.getElementById('info-email')) {
+                document.getElementById('info-email').innerText = userEmail;
+            }
+            if(document.getElementById('info-tel')) {
+                document.getElementById('info-tel').innerText = userData.phone || "Non fourni";
+            }
+            
+            // Correction pour le cercle jaune : l'ID est 'user-initial'
+            const name = userData.user || userData.username || "investisseur";
+            const initialEl = document.getElementById('user-initial');
+            if (initialEl) {
+                initialEl.innerText = name.charAt(0).toUpperCase();
+            }
+
+            // Charge ta photo si elle existe
+            const savedPhoto = localStorage.getItem('photo_' + userEmail);
+            if (savedPhoto) {
+                // On utilise les IDs de tes images : 'top-user-photo' ou 'user-photo'
+                const img = document.getElementById('top-user-photo'); 
+                if (img) {
+                    img.src = savedPhoto;
+                    img.style.display = "block";
+                }
+                // On cache l'initiale si la photo est là
+                if (initialEl) initialEl.style.display = "none";
+            }
+        }
+    }
+});
+
+// --- 1. OUVERTURE/FERMETURE DU MENU ---
+function toggleProfile() {
+    const menu = document.getElementById('profile-menu');
+    if (menu) {
+        const isHidden = menu.style.display === "none" || menu.style.display === "";
+        menu.style.display = isHidden ? "block" : "none";
+        if (isHidden) chargerDonneesUtilisateur();
+    }
+}
+
+// --- 2. CHARGEMENT DYNAMIQUE DES DONNÉES ---
+function chargerDonneesUtilisateur() {
+    const emailConnecte = localStorage.getItem('user_connected');
+    if (!emailConnecte) return;
+
+    const dataRaw = localStorage.getItem(emailConnecte);
+    if (!dataRaw) return;
+
+    try {
+        const userData = JSON.parse(dataRaw);
+
+        // Mise à jour des textes seulement si l'ID existe dans le HTML
+        const mapping = {
+    'info-nom': userData.username,
+    'info-email': userData.email,
+    'info-tel': userData.phone,
+    'balance': localStorage.getItem('solde_' + emailConnecte) || "0" 
+};
+
+
+        for (let id in mapping) {
+            let el = document.getElementById(id);
+            if (el) el.innerText = mapping[id];
+        }
+
+        // Gestion de l'initiale
+        const initiale = userData.username ? userData.username.charAt(0).toUpperCase() : "I";
+        if (document.getElementById('user-initial')) document.getElementById('user-initial').innerText = initiale;
+        if (document.getElementById('menu-initial')) document.getElementById('menu-initial').innerText = initiale;
+
+        // Gestion de la photo
+        const photo = localStorage.getItem('kz_user_photo_' + emailConnecte);
+        if (photo) {
+            appliquerPhoto(photo);
+        }
+    } catch (e) {
+        console.log("Erreur de lecture des données");
+    }
+}
+
+// --- 3. CHANGEMENT DE PHOTO ---
+function mettreAJourPhoto(input) {
+    const emailConnecte = localStorage.getItem('user_connected');
+    if (input.files && input.files[0] && emailConnecte) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const imageBase64 = e.target.result;
+            localStorage.setItem('kz_user_photo_' + emailConnecte, imageBase64);
+            appliquerPhoto(imageBase64);
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function appliquerPhoto(source) {
+    const photos = ['menu-photo', 'top-user-photo'];
+    const initiales = ['menu-initial', 'user-initial'];
+    
+    photos.forEach(id => {
+        let img = document.getElementById(id);
+        if (img) { img.src = source; img.style.display = "block"; }
+    });
+    
+    initiales.forEach(id => {
+        let ini = document.getElementById(id);
+        if (ini) ini.style.display = "none";
+    });
+// --- 1. FONCTION DE DÉCONNEXION (CORRIGÉE) ---
+function logout() {
+
+        // On récupère l'email de l'utilisateur actuel (clé de la mémoire)
+        let userEmail = localStorage.getItem('user_connected');
+        
+        if (userEmail) {
+            // SAUVEGARDE DU SOLDE
+            let elBalance = document.getElementById('balance');
+            if (elBalance) {
+                localStorage.setItem('solde_' + userEmail, elBalance.innerText);
+            }
+
+            // SAUVEGARDE DES INFOS PROFIL (Optionnel mais recommandé)
+            let elNom = document.getElementById('info-nom');
+            if (elNom) {
+                localStorage.setItem('nom_' + userEmail, elNom.innerText);
+            }
+        }
+
+        // ON EFFACE LA SESSION ACTIVE MAIS PAS LA MÉMOIRE
+        localStorage.removeItem('user_connected');
+        
+        // REDIRECTION (Adapte le nom du fichier si besoin)
+        window.location.href = "index.html"; 
+    }}
+    
+    // Cette fonction déclenche l'affichage du message Oui/Non
+function demanderDeconnexion() {
+    let nb = document.getElementById('notification-bar');
+    if (nb) {
+        nb.innerHTML = `
+            <div style="padding: 15px; text-align: center; background: #222; border-top: 2px solid #ff9800;">
+                <p style="color: white; margin-bottom: 15px; font-weight: bold;">Voulez-vous vraiment vous déconnecter ?</p>
+                <button onclick="logout()" style="background:white; color:red; border:none; padding:8px 20px; cursor:pointer; font-weight:bold; border-radius:3px;">OUI</button>
+                <button onclick="document.getElementById('notification-bar').style.display='none'" style="background:gray; color:white; border:none; padding:8px 20px; margin-left:15px; cursor:pointer; border-radius:3px;">NON</button>
+            </div>
+        `;
+        nb.style.display = "block";
+        nb.style.height = "auto";
+    }
+}
+</script>
+<script>
+// 1. Affiche la barre Oui/Non
+function demanderDeconnexion() {
+    let nb = document.getElementById('notification-bar');
+    if (nb) {
+        nb.innerHTML = `
+            <div style="padding: 15px; text-align: center; background: #222; border-top: 2px solid #ff9800;">
+                <p style="color: white; margin-bottom: 15px; font-weight: bold;">Voulez-vous vraiment vous déconnecter ?</p>
+                <button onclick="logout()" style="background:white; color:red; border:none; padding:8px 20px; cursor:pointer; font-weight:bold; border-radius:3px;">OUI</button>
+                <button onclick="document.getElementById('notification-bar').style.display='none'" style="background:gray; color:white; border:none; padding:8px 20px; margin-left:15px; cursor:pointer; border-radius:3px;">NON</button>
+            </div>
+        `;
+        nb.style.display = "block";
+    }
+}
+
+// 2. Sauvegarde et déconnexion réelle
+function logout() {
+    // Récupération de l'email
+    let userEmail = localStorage.getItem('user_connected');
+    
+    if (userEmail) {
+        // SAUVEGARDE DU SOLDE (FCFA)
+        let elBalance = document.getElementById('balance');
+        if (elBalance) {
+            localStorage.setItem('solde_' + userEmail, elBalance.innerText);
+        }
+
+        // SAUVEGARDE DU NOM DU PROFIL
+        let elNom = document.getElementById('info-nom');
+        if (elNom) {
+            localStorage.setItem('nom_' + userEmail, elNom.innerText);
+        }
+    }
+
+    // Efface la session et redirige
+    localStorage.removeItem('user_connected');
+    window.location.href = "index.html"; 
+}
+</script>
+
+</body>
+</html>

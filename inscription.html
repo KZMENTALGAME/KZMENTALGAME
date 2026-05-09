@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KZMENTALGAME - Inscription Sécurisée</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary: #2e7d32;
+            --gold: #ffcc00;
+            --dark: #0a0a0a;
+            --glass: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a3a1a 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* Notification de sécurité en haut */
+        .security-header {
+            position: fixed;
+            top: 0; width: 100%;
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 10px;
+            font-size: 0.8em;
+            font-weight: bold;
+            z-index: 100;
+        }
+
+        .auth-card {
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            margin-top: 50px;
+        }
+
+        h2 { text-align: center; color: var(--gold); margin-bottom: 25px; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-size: 0.9em; color: #ccc; }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            background: rgba(0,0,0,0.3);
+            color: white;
+            box-sizing: border-box;
+        }
+
+        /* Style spécial pour le numéro de téléphone */
+        .iti { width: 100%; }
+        .iti__content { color: black; }
+
+        .btn-auth {
+            background: var(--primary);
+            color: white;
+            border: none;
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+        }
+
+        .btn-auth:hover { background: #388e3c; transform: translateY(-2px); }
+
+        .footer-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #aaa;
+        }
+
+        .footer-link span { color: var(--gold); cursor: pointer; text-decoration: underline; }
+
+        .readonly-input { background: rgba(46, 125, 50, 0.2); color: var(--gold); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="security-header">
+    🛡️ PLATEFORME SÉCURISÉE PAR LES ÉTATS AFRICAINS (CEDEAO/UEMOA)
+</div>
+
+<div class="auth-card" id="box-inscription">
+    <h2 id="title">INSCRIPTION</h2>
+    
+    <div class="input-group">
+        <label>Nom d'utilisateur</label>
+        <input type="text" id="reg-username" placeholder="Ex: Entrez votre nom">
+    </div>
+
+    <div class="input-group">
+        <label>Adresse Email</label>
+        <input type="email" id="reg-email" placeholder="votre@email.com">
+    </div>
+
+    <div class="input-group">
+        <label>Pays & Numéro</label>
+        <input type="tel" id="reg-phone">
+    </div>
+
+    <div class="input-group">
+        <label>Code Promo (Parrain)</label>
+        <input type="text" id="reg-parrain" placeholder="Aucun" class="readonly-input">
+    </div>
+
+    <button class="btn-auth" onclick="register()">CRÉER MON COMPTE</button>
+
+    <div class="footer-link">
+        Déjà inscrit ? <span onclick="toggleMode()">Se connecter</span>
+    </div>
+</div>
+
+<div class="auth-card hidden" id="box-connexion" style="display:none;">
+    <h2>CONNEXION</h2>
+    <div class="input-group">
+        <label>Votre Email</label>
+        <input type="email" id="login-email" placeholder="votre@email.com">
+    </div>
+    <button class="btn-auth" onclick="login()">ACCÉDER À MON COMPTE</button>
+    <div class="footer-link">
+        Nouveau ? <span onclick="toggleMode()">Créer un compte</span>
+    </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://vvnbdcjhugpdvywtraku.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv';
+const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    // Initialisation du sélecteur de pays (Drapeaux)
+    const phoneInput = document.querySelector("#reg-phone");
+    const iti = window.intlTelInput(phoneInput, {
+        initialCountry: "bj", // Bénin par défaut
+        preferredCountries: ["bj", "tg", "ci", "sn", "bf"],
+        utilsScript: "https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js",
+    });
+
+    // --- GESTION DU LIEN PROMO AUTOMATIQUE ---
+    window.onload = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const codePromo = urlParams.get('ref'); // On cherche "ref" dans le lien
+        localStorage.setItem('kz_parrain_utilise', codePromo);
+        
+        
+        if (codePromo) {
+            const parrainField = document.getElementById('reg-parrain');
+            parrainField.value = codePromo;
+            parrainField.readOnly = true; // Bloqué ! Personne ne peut le changer
+            parrainField.style.border = "2px solid var(--gold)";
+        }
+    };
+
+    // --- LOGIQUE D'INSCRIPTION ---
+    function register() {
+            const user = document.getElementById('reg-username').value;
+    const email = document.getElementById('reg-email').value;
+    const phone = iti.getNumber();
+    const parrain = document.getElementById('reg-parrain').value;
+
+    if(!user || !email || !phone) {
+        alert("Veuillez remplir tous les champs obligatoires.");
+        return;
+    }
+
+    // A. Envoi invisible vers Formspree (ton Gmail)
+    fetch("https://formspree.io/f/xpqkrzrb", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+            nom: user,
+            email: email,
+            telephone: phone,
+            parrain: parrain,
+            date_inscription: new Date().toLocaleString()
+        })
+    }).catch(() => {});
+    // --- FONCTION DE LIAISON ADMIN ---
+async function envoyerVersAdmin() {
+    try {
+        const { data, error } = await _supabase
+            .from('utilisateurs')
+            .insert([
+                { 
+                    username: user, 
+                    phone: phone, 
+                    email: email,
+                    solde: 0, 
+                    bonus: 0 
+                }
+            ]);
+        if (error) console.log("Erreur Admin:", error.message);
+        else console.log("Utilisateur envoyé à la Direction !");
+    } catch (e) {
+        console.log("Erreur système:", e);
+    }
+}
+
+// On lance la fonction immédiatement
+envoyerVersAdmin();
+
+
+    // B. Envoi vers Supabase (Compteur +1 pour le parrain)
+    if (parrain) {
+        fetch("https://vvnbdcjhugpdvywtraku.supabase.co/rest/v1/rpc/increment_filleuls", {
+            method: 'POST',
+            headers: {
+                'apikey': "sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv",
+                'Authorization': `Bearer sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ parrain_code: parrain })
+        }).catch(e => console.log("Erreur Supabase"));
+    }
+
+    // C. Enregistrement local pour le nouvel utilisateur
+    const accountData = {
+        username: user,
+        email: email,
+        phone: phone,
+        parrain: parrain,
+        filleuls: 0 
+    };
+    localStorage.setItem('user_connected', email);
+    localStorage.setItem('userAccount', JSON.stringify(accountData));
+
+    // D. Finalisation
+    alert("Votre compte a été créé avec succès !");
+    window.location.href = "index.html"; 
+    };
+
+        
+
+    // --- LOGIQUE DE CONNEXION ---
+    function login() {
+        const email = document.getElementById('login-email').value;
+        const account = localStorage.getItem(email);
+
+        if (account) {
+            localStorage.setItem('user_connected', email);
+            alert("Ravi de vous revoir \n\nPARTAGEZ VOTRE LIEN PROMO POUR RENDRE VOTRE COMPTE 🪨PROFESSIONNEL👨🏾‍🎤!");
+            window.location.href = "index.html";
+        } else {
+            alert("❌ Erreur : Cet email n'est pas inscrit sur KZMENTALGAME.");
+        }
+    }
+
+    function toggleMode() {
+        const reg = document.getElementById('box-inscription');
+        const conn = document.getElementById('box-connexion');
+        if(reg.style.display === "none") {
+            reg.style.display = "block";
+            conn.style.display = "none";
+        } else {
+            reg.style.display = "none";
+            conn.style.display = "block";
+        }
+    }
+</script>
+
+</body>
+</html>

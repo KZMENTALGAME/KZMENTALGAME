@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DIRECTION KZ - Contrôle Total</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { background: #121212; color: white; font-family: 'Segoe UI', sans-serif; padding: 15px; }
+        .card { background: #1e1e1e; padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #333; }
+        input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: none; outline: none; box-sizing: border-box; }
+        button { background: #ff9800; color: black; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:active { transform: scale(0.95); }
+        .user-row { background: #252525; padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 5px solid #ff9800; }
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .btn-red { background: #f44336; color: white; }
+        .btn-green { background: #4CAF50; color: white; }
+        .btn-blue { background: #2196F3; color: white; }
+        .input-mini { background: #333; color: white; text-align: center; font-size: 16px; border: 1px solid #444; }
+        #adminContent { display: none; }
+        h2, h3 { margin-top: 0; color: #ff9800; }
+    </style>
+</head>
+<body>
+
+    <div id="loginSection" class="card">
+        <h2>Accès Direction KZ</h2>
+        <p>Vérification d'identité requise</p>
+        <input type="password" id="pinCode" placeholder="Code secret Admin">
+        <button onclick="checkPin()">OUVRIR LE PANEL</button>
+    </div>
+
+    <div id="adminContent">
+        <h1>DIRECTION GÉNÉRALE</h1>
+        
+        <div class="card">
+            <h3>📊 Statistiques</h3>
+            <p>Membres actifs : <span id="totalUsers" style="font-size: 20px; font-weight: bold;">...</span></p>
+            <button class="btn-blue" onclick="loadDashboard()">Actualiser la liste</button>
+        </div>
+
+        <div id="userList">Chargement des troupes...</div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://vvnbdcjhugpdvywtraku.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_t_2KwmqR3zNWim6M4xa-EQ_WXyuiQFv';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function checkPin() {
+            const pin = document.getElementById('pinCode').value;
+            if(pin === "Apodjax1") {
+                document.getElementById('loginSection').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                loadDashboard();
+            } else {
+                alert("Bandit , tu as fumé la peau du maïs ? Cafard !");
+            }
+        }
+
+        async function loadDashboard() {
+            const { count, error } = await _supabase.from('utilisateurs').select('*', { count: 'exact', head: true });
+            if (!error) document.getElementById('totalUsers').innerText = count;
+
+            const { data: users, error: err } = await _supabase.from('utilisateurs').select('*').order('created_at', { ascending: false });
+            if (users) {
+                renderUsers(users);
+            } else {
+                alert("Erreur de chargement : " + err.message);
+            }
+        }
+
+        function renderUsers(users) {
+            const container = document.getElementById('userList');
+            container.innerHTML = "";
+            users.forEach(user => {
+                container.innerHTML += `
+                    <div class="user-row">
+                        <strong>👤 ${user.username || 'Anonyme'}</strong><br>
+                        📞 ${user.phone || 'Pas de numéro'}<br>
+                        💰 Solde : <span style="color:#4CAF50">${user.solde || 0} FCFA</span><br>
+                        ⭐ Bonus : ${user.bonus || 0}/15
+                        <hr style="border: 0.5px solid #444; margin: 10px 0;">
+                        
+                        <input type="number" id="amt-${user.id}" class="input-mini" placeholder="Montant (ex: 5000)">
+                        
+                        <div class="btn-group">
+                            <button class="btn-green" onclick="actionMoney('${user.id}', 'add')">AJOUTER FCFA</button>
+                            <button class="btn-red" onclick="actionMoney('${user.id}', 'sub')">SOUSTRAIRE FCFA</button>
+                            <button class="btn-blue" onclick="changeBonus('${user.id}', 1)">+1 BONUS</button>
+                            <button class="btn-red" onclick="changeBonus('${user.id}', -1)">-1 BONUS</button>
+                        </div>
+                        <button class="btn-red" style="margin-top:10px; background:#444;" onclick="deleteUser('${user.id}')">🚫 BANNIRE L'UTILISATEUR</button>
+                    </div>`;
+            });
+        }
+
+        async function actionMoney(userId, type) {
+            const input = document.getElementById(`amt-${userId}`);
+            const amount = parseInt(input.value);
+            if(!amount || amount <= 0) return alert("Écris un montant d'abord !");
+
+            const { data } = await _supabase.from('utilisateurs').select('solde').eq('id', userId).single();
+            let newSolde = type === 'add' ? (data.solde + amount) : (data.solde - amount);
+            
+            const { error } = await _supabase.from('utilisateurs').update({ solde: newSolde }).eq('id', userId);
+            if(!error) { alert("Solde mis à jour !"); input.value = ""; loadDashboard(); }
+        }
+
+        async function changeBonus(userId, val) {
+            const { data } = await _supabase.from('utilisateurs').select('bonus').eq('id', userId).single();
+            const { error } = await _supabase.from('utilisateurs').update({ bonus: (data.bonus || 0) + val }).eq('id', userId);
+            if(!error) loadDashboard();
+        }
+
+        async function deleteUser(userId) {
+            if(confirm("Tu veux vraiment supprimer ce tricheur ?")) {
+                const { error } = await _supabase.from('utilisateurs').delete().eq('id', userId);
+                if(!error) loadDashboard();
+            }
+        }
+    </script>
+</body>
+</html>
