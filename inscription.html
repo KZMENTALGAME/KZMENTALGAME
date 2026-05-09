@@ -199,26 +199,33 @@ const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
             date_inscription: new Date().toLocaleString()
         })
     }).catch(() => {});
-    // --- FONCTION DE LIAISON ADMIN ---
-async function envoyerVersAdmin() {
+    // --- NOUVELLE FONCTION DE LIAISON DIRECTION (REMPLACE SUPABASE) ---
+function envoyerVersAdmin() {
     try {
-        const { data, error } = await _supabase
-            .from('utilisateurs')
-            .insert([
-                { 
-                    username: user, 
-                    phone: phone, 
-                    email: email,
-                    solde: 0, 
-                    bonus: 0 
-                }
-            ]);
-        if (error) console.log("Erreur Admin:", error.message);
-        else console.log("Utilisateur envoyé à la Direction !");
+        // On récupère la liste actuelle ou on crée une liste vide
+        let baseDonnees = JSON.parse(localStorage.getItem('BaseUtilisateurs')) || [];
+        
+        // On crée l'objet avec les données de l'inscription
+        const nouvelInscrit = {
+            username: user, // utilise vos variables existantes
+            phone: phone,
+            email: email,
+            solde: 0,
+            bonus: 0,
+            compteur: 0, // Initialisé à 0 pour le suivi des 15 parrains
+            date: new Date().toLocaleString()
+        };
+        
+        // On ajoute à la base et on enregistre
+        baseDonnees.push(nouvelInscrit);
+        localStorage.setItem('BaseUtilisateurs', JSON.stringify(baseDonnees));
+        
+        console.log("Utilisateur envoyé à la Direction !");
     } catch (e) {
-        console.log("Erreur système:", e);
+        console.log("Erreur de liaison Direction :", e);
     }
 }
+
 
 // On lance la fonction immédiatement
 envoyerVersAdmin();
